@@ -1,5 +1,5 @@
 pipeline {
-  agent any
+  agent {label 'agent'}
 
   environment {
     NODE_VERSION = '20.19.3' // Use whatever Node 20 version you prefer
