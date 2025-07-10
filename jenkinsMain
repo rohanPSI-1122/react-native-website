@@ -1,0 +1,67 @@
+pipeline {
+  agent any
+
+  environment {
+    NODE_VERSION = '20.19.3' // Use whatever Node 20 version you prefer
+    COREPACK_HOME = "$HOME/.corepack"
+  }
+
+  tools {
+    nodejs "${NODE_VERSION}"
+  }
+
+  stages {
+    stage('Clone Repo') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Setup Corepack and Yarn') {
+      steps {
+        sh '''
+          corepack enable
+          corepack prepare yarn@4 --activate
+        '''
+      }
+    }
+
+    stage('Install Dependencies') {
+      steps {
+        sh 'yarn install'
+      }
+    }
+
+    stage('Lint') {
+      steps {
+        dir('website') {
+          sh 'yarn prettier --check .'
+          sh 'yarn language:lint'
+        }
+      }
+    }
+
+    stage('Build Website') {
+      steps {
+        dir('website') {
+          sh 'yarn build'
+        }
+      }
+    }
+
+    stage('Archive Site (Optional)') {
+      steps {
+        archiveArtifacts artifacts: 'website/build/**', allowEmptyArchive: false
+      }
+    }
+  }
+
+  post {
+    success {
+      echo '✅ CI pipeline completed successfully.'
+    }
+    failure {
+      echo '❌ CI pipeline failed.'
+    }
+  }
+}
